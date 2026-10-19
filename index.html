@@ -4,8 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>NEO VECTOR SHIFT</title>
+    <title>NEO VECTOR SHIFT - ONLINE MULTIPLAYER</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PeerJS WebRTC Library for Serverless Room-Code Pairing -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Teko:wght@500;700&display=swap');
 
@@ -43,14 +45,12 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
         }
 
-        /* Clean Arcade Typography */
         .arcade-font {
             font-family: 'Teko', sans-serif;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* Physical Retro-Modern Button Styling */
         .btn-arcade {
             background: linear-gradient(180deg, #1f293d 0%, #111827 100%);
             border: 1px solid #3b82f6;
@@ -95,12 +95,7 @@
             border-color: #f87171;
             box-shadow: 0 5px 0 #991b1b, 0 8px 12px rgba(0,0,0,0.6);
         }
-        .btn-danger:active {
-            transform: translateY(3px);
-            box-shadow: 0 1px 0 #991b1b;
-        }
 
-        /* Touch Controls Layer */
         .mobile-touch-bar {
             position: absolute;
             bottom: 0;
@@ -171,7 +166,9 @@
             <div class="flex justify-between items-start">
                 <!-- P1 Score -->
                 <div id="p1ScoreBox">
-                    <div class="text-2xs text-cyan-400 font-mono tracking-wider">P1 SCORE</div>
+                    <div class="text-2xs text-cyan-400 font-mono tracking-wider flex items-center gap-1">
+                        P1 SCORE <span id="p1RoleTag" class="text-gray-500 text-3xs">(YOU)</span>
+                    </div>
                     <div id="p1ScoreDisplay" class="arcade-font text-3xl sm:text-4xl text-cyan-400 leading-none">000000</div>
                     <div id="comboDisplay" class="text-xs font-bold text-yellow-400 opacity-0 transition-opacity duration-200">
                         COMBO x<span id="comboMultiplier">1</span>
@@ -191,7 +188,9 @@
                 <!-- P2 Score (Co-Op) & High Score / Pause -->
                 <div class="flex items-start gap-4">
                     <div id="p2ScoreBox" class="hidden text-right">
-                        <div class="text-2xs text-pink-400 font-mono tracking-wider">P2 SCORE</div>
+                        <div class="text-2xs text-pink-400 font-mono tracking-wider flex items-center justify-end gap-1">
+                            <span id="p2RoleTag" class="text-gray-500 text-3xs"></span> P2 SCORE
+                        </div>
                         <div id="p2ScoreDisplay" class="arcade-font text-3xl sm:text-4xl text-pink-400 leading-none">000000</div>
                     </div>
                     <div class="text-right">
@@ -209,7 +208,7 @@
                 <!-- P1 Status Bar -->
                 <div class="flex flex-col gap-1.5">
                     <div class="flex items-center gap-2">
-                        <span id="p1Label" class="text-xs text-cyan-400 font-mono">P1 HULL</span>
+                        <span class="text-xs text-cyan-400 font-mono">P1 HULL</span>
                         <div class="w-32 sm:w-44 bg-slate-950 border border-cyan-500/40 rounded-sm h-3 p-0.5">
                             <div id="p1ShieldBar" class="bg-cyan-400 h-full transition-all duration-150" style="width: 100%;"></div>
                         </div>
@@ -256,44 +255,78 @@
             <div class="max-w-md w-full bg-slate-900 border border-slate-700/80 p-6 rounded-lg shadow-2xl relative">
                 <div class="border-b border-slate-800 pb-4 mb-6 text-center">
                     <h1 class="arcade-font text-5xl text-blue-400 leading-none">NEO VECTOR SHIFT</h1>
-                    <p class="text-xs text-gray-400 font-mono mt-1">SPACE ACTION ARCADE ENGINE</p>
+                    <p class="text-xs text-gray-400 font-mono mt-1">SHARED ROOM CO-OP ENGINE</p>
                 </div>
 
                 <!-- Mode Select Buttons -->
                 <div class="space-y-3 mb-6">
                     <div class="text-2xs font-mono text-gray-400 text-center tracking-wider">SELECT GAME MODE</div>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button id="startSoloBtn" class="py-3 btn-arcade rounded text-lg arcade-font tracking-wide">
-                            1 PLAYER SOLO
-                        </button>
-                        <button id="startCoopBtn" class="py-3 btn-pink rounded text-lg arcade-font tracking-wide">
-                            2 PLAYER CO-OP
-                        </button>
-                    </div>
+                    <button id="startSoloBtn" class="w-full py-3 btn-arcade rounded text-lg arcade-font tracking-wide">
+                        1 PLAYER SOLO
+                    </button>
+                    <button id="onlineLobbyBtn" class="w-full py-3 btn-pink rounded text-lg arcade-font tracking-wide flex justify-center items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> 2 PLAYER ROOM CODE (ONLINE)
+                    </button>
+                    <button id="startLocalCoopBtn" class="w-full py-2 bg-slate-800 border border-slate-700 text-gray-300 text-xs font-mono rounded hover:bg-slate-700 transition">
+                        2 PLAYER LOCAL (SAME KEYBOARD)
+                    </button>
                     <button id="optionsBtn" class="w-full py-2 bg-slate-800 border border-slate-700 text-gray-300 text-xs font-mono rounded hover:bg-slate-700 transition">
                         SETTINGS
                     </button>
                 </div>
 
-                <!-- Desktop Controls Legend -->
-                <div class="bg-slate-950 p-4 rounded border border-slate-800 text-2xs font-mono text-gray-400 space-y-2">
-                    <div class="text-blue-400 font-bold border-b border-slate-800 pb-1">FLIGHT MAPPING</div>
-                    <div class="grid grid-cols-2 gap-2">
+                <div class="mt-6 text-center text-2xs font-mono text-gray-500">
+                    DEV // <a href="#" class="text-blue-400 hover:underline">@gray_exists0</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room Code Lobby Modal -->
+        <div id="roomLobbyModal" class="absolute inset-0 bg-black/85 backdrop-blur-md flex justify-center items-center z-40 hidden p-4">
+            <div class="max-w-sm w-full bg-slate-900 border border-pink-500/50 p-6 rounded-lg space-y-5 font-mono shadow-2xl">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h2 class="text-xl text-pink-400 font-bold arcade-font">2P ROOM CODE PAIRING</h2>
+                    <button id="closeRoomLobbyBtn" class="text-gray-400 hover:text-white text-xs">✕ CLOSE</button>
+                </div>
+
+                <!-- Host Option -->
+                <div id="hostSection" class="bg-slate-950 p-4 rounded border border-slate-800 space-y-2">
+                    <div class="text-2xs text-cyan-400 font-bold">HOST A NEW ROOM</div>
+                    <p class="text-3xs text-gray-400">Generate code and share it with Player 2.</p>
+                    <div class="flex items-center gap-2">
+                        <button id="createRoomBtn" class="px-4 py-2 btn-arcade text-xs rounded w-full">CREATE ROOM</button>
+                    </div>
+                    <div id="hostCodeDisplay" class="hidden mt-2 p-2 bg-slate-900 border border-cyan-500/40 rounded flex justify-between items-center">
                         <div>
-                            <span class="text-cyan-400 font-semibold">P1 (CYAN):</span>
-                            <div>MOVE: <span class="text-gray-200">WASD</span></div>
-                            <div>FIRE: <span class="text-gray-200">SPACE / F</span></div>
+                            <div class="text-3xs text-gray-400">YOUR ROOM CODE:</div>
+                            <div id="generatedRoomCode" class="text-xl font-bold text-cyan-300 tracking-widest">NVS-0000</div>
                         </div>
-                        <div>
-                            <span class="text-pink-400 font-semibold">P2 (MAGENTA):</span>
-                            <div>MOVE: <span class="text-gray-200">ARROWS</span></div>
-                            <div>FIRE: <span class="text-gray-200">ENTER / L / M</span></div>
-                        </div>
+                        <button id="copyCodeBtn" class="px-2 py-1 bg-slate-800 border border-slate-600 text-xs rounded hover:bg-slate-700 text-gray-200">
+                            COPY
+                        </button>
+                    </div>
+                    <div id="waitingMsg" class="hidden text-3xs text-yellow-400 animate-pulse mt-1">
+                        Waiting for Player 2 to join...
                     </div>
                 </div>
 
-                <div class="mt-6 text-center text-2xs font-mono text-gray-500">
-                    DEV // <a href="#" class="text-blue-400 hover:underline">@gray_exists0</a>
+                <div class="text-center text-3xs text-gray-500 font-bold">— OR —</div>
+
+                <!-- Join Option -->
+                <div id="joinSection" class="bg-slate-950 p-4 rounded border border-slate-800 space-y-2">
+                    <div class="text-2xs text-pink-400 font-bold">JOIN AN EXISTING ROOM</div>
+                    <p class="text-3xs text-gray-400">Enter the room code from Host.</p>
+                    <div class="space-y-2">
+                        <input type="text" id="joinCodeInput" placeholder="ENTER CODE (e.g. SHIFT-8492)" 
+                            class="w-full bg-slate-900 border border-slate-700 px-3 py-2 text-xs rounded text-pink-300 font-mono tracking-wider focus:outline-none focus:border-pink-500 uppercase">
+                        <button id="joinRoomBtn" class="w-full py-2 btn-pink text-xs rounded font-bold">
+                            CONNECT & JOIN
+                        </button>
+                    </div>
+                </div>
+
+                <div id="lobbyStatusText" class="text-3xs text-center text-gray-400 min-h-[16px]">
+                    Ready to connect.
                 </div>
             </div>
         </div>
@@ -328,7 +361,7 @@
 
                 <div class="bg-slate-950 p-3 rounded border border-slate-800 text-xs space-y-2 mb-5">
                     <div class="flex justify-between">
-                        <span class="text-gray-400">SCORE:</span>
+                        <span class="text-gray-400">TOTAL SCORE:</span>
                         <span id="finalScore" class="text-blue-400 font-bold">000000</span>
                     </div>
                     <div class="flex justify-between">
@@ -360,14 +393,13 @@
         </div>
     </div>
 
-    <!-- MAIN GAME LOGIC -->
+    <!-- MAIN GAME & ROOM CODE LOGIC -->
     <script>
         /**
-         * NEO VECTOR SHIFT (CO-OP EDITION)
+         * NEO VECTOR SHIFT - ONLINE MULTIPLAYER ENGINE
          * Developer: @gray_exists0
          */
 
-        // ... existing audio code ...
         class SoundEngine {
             constructor() {
                 this.ctx = null;
@@ -458,10 +490,18 @@
             height = canvas.height = Math.min(window.innerHeight, 850);
         });
 
-        // Game State
+        // Game & Network States
         let isRunning = false;
         let isPaused = false;
         let isCoopMode = false;
+        let isOnline = false;
+        let isHost = true;
+        let localPlayerId = 1;
+
+        let peer = null;
+        let peerConn = null;
+        let currentRoomCode = '';
+
         let scoreP1 = 0;
         let scoreP2 = 0;
         let combo = 1;
@@ -471,7 +511,7 @@
         let shakeTime = 0;
         let frameCount = 0;
 
-        // UI DOM Elements
+        // UI DOM References
         const hud = document.getElementById('hud');
         const p1ScoreDisplay = document.getElementById('p1ScoreDisplay');
         const p2ScoreDisplay = document.getElementById('p2ScoreDisplay');
@@ -495,11 +535,13 @@
         const startScreen = document.getElementById('startScreen');
         const gameOverScreen = document.getElementById('gameOverScreen');
         const optionsModal = document.getElementById('optionsModal');
+        const roomLobbyModal = document.getElementById('roomLobbyModal');
         const pauseOverlay = document.getElementById('pauseOverlay');
+        const lobbyStatusText = document.getElementById('lobbyStatusText');
 
         highScoreDisplay.textContent = String(highScore).padStart(6, '0');
 
-        // Controls
+        // Keyboard & Touch Setup
         const keys = {};
         const touchState = { dx: 0, dy: 0, firing: false };
 
@@ -509,7 +551,7 @@
         });
         window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
-        // Touch Control Setup
+        // Touch Control System
         const joystickZone = document.getElementById('joystick-zone');
         const joystickKnob = document.getElementById('joystick-knob');
         const fireBtn = document.getElementById('fire-btn-zone');
@@ -562,7 +604,98 @@
         fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); touchState.firing = true; });
         fireBtn.addEventListener('touchend', (e) => { e.preventDefault(); touchState.firing = false; });
 
-        // Starfield Engine
+        // ROOM CODE NETWORKING LOGIC (PEERJS)
+        function initHostRoom() {
+            lobbyStatusText.textContent = "Initializing Peer connection...";
+            const rawCode = Math.floor(1000 + Math.random() * 9000);
+            currentRoomCode = `SHIFT-${rawCode}`;
+
+            peer = new Peer(currentRoomCode);
+
+            peer.on('open', (id) => {
+                document.getElementById('generatedRoomCode').textContent = id;
+                document.getElementById('hostCodeDisplay').classList.remove('hidden');
+                document.getElementById('waitingMsg').classList.remove('hidden');
+                lobbyStatusText.textContent = "Room active! Waiting for Player 2 to enter code.";
+            });
+
+            peer.on('connection', (conn) => {
+                peerConn = conn;
+                setupConnectionListeners();
+                lobbyStatusText.textContent = "Player 2 Connected! Launching battle...";
+                setTimeout(() => {
+                    roomLobbyModal.classList.add('hidden');
+                    startOnlineGame(true);
+                }, 1000);
+            });
+
+            peer.on('error', (err) => {
+                lobbyStatusText.textContent = "Network Error: " + err.type;
+            });
+        }
+
+        function joinRoomWithCode(code) {
+            if (!code) {
+                lobbyStatusText.textContent = "Please enter a valid room code!";
+                return;
+            }
+            lobbyStatusText.textContent = "Connecting to Host (" + code + ")...";
+            currentRoomCode = code.trim().toUpperCase();
+
+            peer = new Peer();
+
+            peer.on('open', () => {
+                peerConn = peer.connect(currentRoomCode);
+                setupConnectionListeners();
+            });
+
+            peer.on('error', (err) => {
+                lobbyStatusText.textContent = "Failed to connect! Check room code.";
+            });
+        }
+
+        function setupConnectionListeners() {
+            peerConn.on('open', () => {
+                if (!isHost) {
+                    lobbyStatusText.textContent = "Connected to Host! Launching...";
+                    setTimeout(() => {
+                        roomLobbyModal.classList.add('hidden');
+                        startOnlineGame(false);
+                    }, 1000);
+                }
+            });
+
+            peerConn.on('data', (data) => {
+                handleNetworkData(data);
+            });
+
+            peerConn.on('close', () => {
+                alert("Partner disconnected from session.");
+                location.reload();
+            });
+        }
+
+        function sendNetworkData(data) {
+            if (peerConn && peerConn.open) {
+                peerConn.send(data);
+            }
+        }
+
+        function handleNetworkData(data) {
+            if (data.type === 'P2_INPUT' && isHost) {
+                // Host receives input vector from Player 2
+                p2NetworkInput = data.input;
+            } else if (data.type === 'HOST_STATE' && !isHost) {
+                // Player 2 receives synced world state from Host
+                applyHostState(data.state);
+            } else if (data.type === 'START_GAME') {
+                startGame(true, true, false);
+            }
+        }
+
+        let p2NetworkInput = { vx: 0, vy: 0, fire: false };
+
+        // Starfield background
         class Starfield {
             constructor() {
                 this.stars = Array.from({ length: 80 }, () => ({
@@ -630,7 +763,7 @@
             }
         }
 
-        // Player Class (Supports P1 & P2)
+        // Ship Class
         class Player {
             constructor(id, x, color, keyMap) {
                 this.id = id;
@@ -649,7 +782,6 @@
                 this.tilt = 0;
                 this.shieldRipple = 0;
 
-                // Co-Op Down/Revive State
                 this.isDown = false;
                 this.downTimer = 0;
                 this.reviveProgress = 0;
@@ -658,25 +790,53 @@
             update() {
                 if (this.isDown) {
                     this.downTimer--;
-                    if (this.downTimer <= 0) {
-                        // Check Game Over condition
-                        checkGameOver();
-                    }
+                    if (this.downTimer <= 0) checkGameOver();
                     return;
                 }
 
                 let vx = 0;
                 let vy = 0;
+                let isShooting = false;
 
-                // Movement Input
-                if (keys[this.keyMap.left]) vx -= 1;
-                if (keys[this.keyMap.right]) vx += 1;
-                if (keys[this.keyMap.up]) vy -= 1;
-                if (keys[this.keyMap.down]) vy += 1;
+                // Input mapping depending on Online/Local roles
+                if (isOnline) {
+                    if (this.id === localPlayerId) {
+                        // Local inputs
+                        if (keys['KeyA'] || keys['ArrowLeft']) vx -= 1;
+                        if (keys['KeyD'] || keys['ArrowRight']) vx += 1;
+                        if (keys['KeyW'] || keys['ArrowUp']) vy -= 1;
+                        if (keys['KeyS'] || keys['ArrowDown']) vy += 1;
+                        if (touchState.dx !== 0 || touchState.dy !== 0) {
+                            vx = touchState.dx;
+                            vy = touchState.dy;
+                        }
+                        isShooting = keys['Space'] || keys['KeyF'] || keys['Enter'] || touchState.firing;
 
-                if (this.id === 1 && (touchState.dx !== 0 || touchState.dy !== 0)) {
-                    vx = touchState.dx;
-                    vy = touchState.dy;
+                        if (!isHost) {
+                            // Client sends inputs to Host
+                            sendNetworkData({
+                                type: 'P2_INPUT',
+                                input: { vx, vy, fire: isShooting }
+                            });
+                        }
+                    } else if (isHost && this.id === 2) {
+                        // Host applies received P2 inputs
+                        vx = p2NetworkInput.vx;
+                        vy = p2NetworkInput.vy;
+                        isShooting = p2NetworkInput.fire;
+                    }
+                } else {
+                    // Local Co-Op / Solo Controls
+                    if (keys[this.keyMap.left]) vx -= 1;
+                    if (keys[this.keyMap.right]) vx += 1;
+                    if (keys[this.keyMap.up]) vy -= 1;
+                    if (keys[this.keyMap.down]) vy += 1;
+
+                    if (this.id === 1 && (touchState.dx !== 0 || touchState.dy !== 0)) {
+                        vx = touchState.dx;
+                        vy = touchState.dy;
+                    }
+                    isShooting = this.keyMap.fire.some(k => keys[k]) || (this.id === 1 && touchState.firing);
                 }
 
                 this.tilt += (vx * 0.25 - this.tilt) * 0.2;
@@ -690,7 +850,7 @@
                 this.x = Math.max(this.radius, Math.min(width - this.radius, this.x));
                 this.y = Math.max(this.radius, Math.min(height - this.radius, this.y));
 
-                // Weapon Powerup Countdown
+                // Powerup Timers
                 const bar = this.id === 1 ? p1PowerupBar : p2PowerupBar;
                 const txt = this.id === 1 ? p1PowerupTimeText : p2PowerupTimeText;
                 const container = this.id === 1 ? p1PowerupContainer : p2PowerupContainer;
@@ -710,24 +870,22 @@
 
                 if (this.fireCooldown > 0) this.fireCooldown--;
 
-                const isShooting = this.keyMap.fire.some(k => keys[k]) || (this.id === 1 && touchState.firing);
                 if (isShooting && this.fireCooldown <= 0) {
                     this.shoot();
                 }
 
                 if (this.shieldRipple > 0) this.shieldRipple--;
 
-                // Engine Trail
                 particles.push(new Particle(this.x + (Math.random() - 0.5) * 6, this.y + 12, this.color, 1.5, 2));
 
-                // Revive Logic in Co-Op Mode
+                // Co-Op Revival
                 if (isCoopMode) {
                     const otherPlayer = this.id === 1 ? player2 : player1;
                     if (otherPlayer && otherPlayer.isDown) {
                         const dist = Math.hypot(this.x - otherPlayer.x, this.y - otherPlayer.y);
                         if (dist < 40) {
                             otherPlayer.reviveProgress += 1;
-                            if (otherPlayer.reviveProgress >= 120) { // 2 Seconds near player
+                            if (otherPlayer.reviveProgress >= 120) {
                                 otherPlayer.isDown = false;
                                 otherPlayer.shield = 40;
                                 otherPlayer.reviveProgress = 0;
@@ -763,14 +921,12 @@
                 ctx.translate(this.x, this.y);
 
                 if (this.isDown) {
-                    // Downed state pulsing marker
                     ctx.strokeStyle = '#ef4444';
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(0, 0, 18, 0, Math.PI * 2);
                     ctx.stroke();
 
-                    // Revive progress ring
                     if (this.reviveProgress > 0) {
                         ctx.strokeStyle = '#38bdf8';
                         ctx.beginPath();
@@ -826,7 +982,7 @@
 
                     if (isCoopMode) {
                         this.isDown = true;
-                        this.downTimer = 600; // 10s down timer
+                        this.downTimer = 600;
                         this.reviveProgress = 0;
                         checkGameOver();
                     } else {
@@ -1117,7 +1273,49 @@
             }
         }
 
-        // Animation Loop
+        // Broadcast State from Host to Client
+        function broadcastHostState() {
+            if (!isOnline || !isHost) return;
+
+            const state = {
+                p1: { x: player1.x, y: player1.y, shield: player1.shield, tilt: player1.tilt, isDown: player1.isDown },
+                p2: player2 ? { x: player2.x, y: player2.y, shield: player2.shield, tilt: player2.tilt, isDown: player2.isDown } : null,
+                scoreP1,
+                scoreP2,
+                enemies: enemies.map(e => ({ x: e.x, y: e.y, type: e.type, hp: e.hp })),
+                projectiles: projectiles.map(p => ({ x: p.x, y: p.y, color: p.color })),
+                boss: boss ? { x: boss.x, y: boss.y, hp: boss.hp, maxHp: boss.maxHp } : null
+            };
+
+            sendNetworkData({ type: 'HOST_STATE', state });
+        }
+
+        function applyHostState(state) {
+            if (isHost) return;
+
+            player1.x = state.p1.x;
+            player1.y = state.p1.y;
+            player1.shield = state.p1.shield;
+            player1.tilt = state.p1.tilt;
+            player1.isDown = state.p1.isDown;
+            updateShieldUI(player1);
+
+            if (player2 && state.p2) {
+                player2.x = state.p2.x;
+                player2.y = state.p2.y;
+                player2.shield = state.p2.shield;
+                player2.tilt = state.p2.tilt;
+                player2.isDown = state.p2.isDown;
+                updateShieldUI(player2);
+            }
+
+            scoreP1 = state.scoreP1;
+            scoreP2 = state.scoreP2;
+            p1ScoreDisplay.textContent = String(scoreP1).padStart(6, '0');
+            p2ScoreDisplay.textContent = String(scoreP2).padStart(6, '0');
+        }
+
+        // Main Loop
         function animate() {
             if (!isRunning) return;
 
@@ -1145,17 +1343,19 @@
                 starfield.update(warpEffectEnabled && isAccelerating);
                 starfield.draw();
 
-                if (!boss) {
-                    if (frameCount % 55 === 0) enemies.push(new Enemy('scout'));
-                    if (frameCount % 180 === 0) enemies.push(new Enemy('interceptor'));
+                if (isHost) {
+                    if (!boss) {
+                        if (frameCount % 55 === 0) enemies.push(new Enemy('scout'));
+                        if (frameCount % 180 === 0) enemies.push(new Enemy('interceptor'));
 
-                    const totalScore = scoreP1 + scoreP2;
-                    if (totalScore > 2500 && !boss) {
-                        boss = new Boss();
+                        const totalScore = scoreP1 + scoreP2;
+                        if (totalScore > 2500 && !boss) {
+                            boss = new Boss();
+                        }
                     }
                 }
 
-                // Update & Draw Players
+                // Players update & render
                 const activePlayers = [player1];
                 if (isCoopMode && player2) activePlayers.push(player2);
 
@@ -1251,16 +1451,28 @@
                 powerups = powerups.filter(p => !p.markedForDeletion);
                 particles = particles.filter(p => p.life > 0);
 
+                if (isHost) broadcastHostState();
+
                 ctx.restore();
             }
 
             requestAnimationFrame(animate);
         }
 
-        // System Actions
-        function startGame(coop = false) {
+        function startOnlineGame(hostRole = true) {
+            isOnline = true;
+            isHost = hostRole;
+            localPlayerId = hostRole ? 1 : 2;
+
+            if (isHost) sendNetworkData({ type: 'START_GAME' });
+            startGame(true, true);
+        }
+
+        function startGame(coop = false, online = false) {
             audio.init();
             isCoopMode = coop;
+            isOnline = online;
+
             scoreP1 = 0;
             scoreP2 = 0;
             combo = 1;
@@ -1279,6 +1491,9 @@
                 p2ScoreBox.classList.remove('hidden');
                 p2HudStatus.classList.remove('hidden');
                 p2HudStatus.classList.add('flex');
+
+                document.getElementById('p1RoleTag').textContent = (isOnline && localPlayerId === 1) ? '(YOU)' : '';
+                document.getElementById('p2RoleTag').textContent = (isOnline && localPlayerId === 2) ? '(YOU)' : '';
             } else {
                 player2 = null;
                 p2ScoreBox.classList.add('hidden');
@@ -1326,10 +1541,37 @@
             else pauseOverlay.classList.add('hidden');
         }
 
-        // UI Event Handlers
-        document.getElementById('startSoloBtn').addEventListener('click', () => startGame(false));
-        document.getElementById('startCoopBtn').addEventListener('click', () => startGame(true));
-        document.getElementById('restartBtn').addEventListener('click', () => startGame(isCoopMode));
+        // Button Handlers
+        document.getElementById('startSoloBtn').addEventListener('click', () => startGame(false, false));
+        document.getElementById('startLocalCoopBtn').addEventListener('click', () => startGame(true, false));
+
+        document.getElementById('onlineLobbyBtn').addEventListener('click', () => {
+            roomLobbyModal.classList.remove('hidden');
+        });
+
+        document.getElementById('closeRoomLobbyBtn').addEventListener('click', () => {
+            roomLobbyModal.classList.add('hidden');
+        });
+
+        document.getElementById('createRoomBtn').addEventListener('click', () => {
+            isHost = true;
+            initHostRoom();
+        });
+
+        document.getElementById('joinRoomBtn').addEventListener('click', () => {
+            isHost = false;
+            const inputCode = document.getElementById('joinCodeInput').value;
+            joinRoomWithCode(inputCode);
+        });
+
+        document.getElementById('copyCodeBtn').addEventListener('click', () => {
+            const codeText = document.getElementById('generatedRoomCode').textContent;
+            navigator.clipboard.writeText(codeText);
+            document.getElementById('copyCodeBtn').textContent = 'COPIED!';
+            setTimeout(() => { document.getElementById('copyCodeBtn').textContent = 'COPY'; }, 2000);
+        });
+
+        document.getElementById('restartBtn').addEventListener('click', () => startGame(isCoopMode, isOnline));
         document.getElementById('pauseBtn').addEventListener('click', togglePause);
         document.getElementById('resumeBtn').addEventListener('click', togglePause);
 

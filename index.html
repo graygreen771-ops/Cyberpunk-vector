@@ -70,6 +70,19 @@
             box-shadow: 0 1px 0 #1e40af, 0 2px 4px rgba(0,0,0,0.4);
         }
 
+        .btn-pink {
+            background: linear-gradient(180deg, #3d1f33 0%, #1e0b19 100%);
+            border: 1px solid #ec4899;
+            box-shadow: 0 4px 0 #be185d, 0 5px 10px rgba(0,0,0,0.5);
+            color: #fbcfe8;
+        }
+        .btn-pink:hover {
+            background: linear-gradient(180deg, #db2777 0%, #be185d 100%);
+            color: #ffffff;
+            border-color: #f472b6;
+            box-shadow: 0 5px 0 #9d174d, 0 8px 12px rgba(0,0,0,0.6);
+        }
+
         .btn-danger {
             background: linear-gradient(180deg, #3f121a 0%, #1f070b 100%);
             border: 1px solid #ef4444;
@@ -153,13 +166,13 @@
         <canvas id="gameCanvas"></canvas>
 
         <!-- Clean HUD Display -->
-        <div id="hud" class="absolute top-0 left-0 w-full h-full pointer-events-none p-5 flex flex-col justify-between z-10 hidden">
+        <div id="hud" class="absolute top-0 left-0 w-full h-full pointer-events-none p-4 flex flex-col justify-between z-10 hidden">
             <!-- Top Header Status -->
             <div class="flex justify-between items-start">
-                <div>
-                    <div class="text-2xs text-gray-400 font-mono tracking-wider">SCORE</div>
-                    <div id="scoreDisplay" class="arcade-font text-4xl text-blue-400 leading-none">000000</div>
-                    <!-- Combo Indicator -->
+                <!-- P1 Score -->
+                <div id="p1ScoreBox">
+                    <div class="text-2xs text-cyan-400 font-mono tracking-wider">P1 SCORE</div>
+                    <div id="p1ScoreDisplay" class="arcade-font text-3xl sm:text-4xl text-cyan-400 leading-none">000000</div>
                     <div id="comboDisplay" class="text-xs font-bold text-yellow-400 opacity-0 transition-opacity duration-200">
                         COMBO x<span id="comboMultiplier">1</span>
                     </div>
@@ -167,7 +180,7 @@
 
                 <!-- Boss Health Gauge -->
                 <div id="bossHealthContainer" class="hidden flex-col items-center w-1/3 max-w-xs">
-                    <div class="text-xs text-red-400 font-mono mb-1 flex items-center gap-1">
+                    <div class="text-2xs text-red-400 font-mono mb-1 flex items-center gap-1">
                         <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> SECTOR HOSTILE
                     </div>
                     <div class="w-full bg-slate-900 border border-red-500/60 rounded-sm h-3 p-0.5">
@@ -175,8 +188,12 @@
                     </div>
                 </div>
 
-                <!-- High Score & Pause Control -->
+                <!-- P2 Score (Co-Op) & High Score / Pause -->
                 <div class="flex items-start gap-4">
+                    <div id="p2ScoreBox" class="hidden text-right">
+                        <div class="text-2xs text-pink-400 font-mono tracking-wider">P2 SCORE</div>
+                        <div id="p2ScoreDisplay" class="arcade-font text-3xl sm:text-4xl text-pink-400 leading-none">000000</div>
+                    </div>
                     <div class="text-right">
                         <div class="text-2xs text-gray-400 font-mono tracking-wider">HIGH</div>
                         <div id="highScoreDisplay" class="arcade-font text-2xl text-gray-400 leading-none">000000</div>
@@ -189,29 +206,46 @@
 
             <!-- Bottom Stats -->
             <div class="flex justify-between items-end pb-2">
-                <div class="flex flex-col gap-2">
-                    <!-- Hull / Shield Meter -->
+                <!-- P1 Status Bar -->
+                <div class="flex flex-col gap-1.5">
                     <div class="flex items-center gap-2">
-                        <span class="text-xs text-blue-400 font-mono">HULL</span>
-                        <div class="w-36 sm:w-48 bg-slate-950 border border-blue-500/40 rounded-sm h-3 p-0.5">
-                            <div id="shieldBar" class="bg-blue-400 h-full transition-all duration-150" style="width: 100%;"></div>
+                        <span id="p1Label" class="text-xs text-cyan-400 font-mono">P1 HULL</span>
+                        <div class="w-32 sm:w-44 bg-slate-950 border border-cyan-500/40 rounded-sm h-3 p-0.5">
+                            <div id="p1ShieldBar" class="bg-cyan-400 h-full transition-all duration-150" style="width: 100%;"></div>
                         </div>
                     </div>
-
-                    <!-- Powerup Countdown Progress -->
-                    <div id="powerupTimerContainer" class="hidden flex-col gap-1 w-36 sm:w-48">
+                    <div id="p1PowerupContainer" class="hidden flex-col gap-1 w-32 sm:w-44">
                         <div class="flex justify-between text-2xs font-mono text-yellow-400">
-                            <span id="weaponDisplay">DUAL LASER</span>
-                            <span id="powerupTimeText">8s</span>
+                            <span id="p1WeaponDisplay">DUAL LASER</span>
+                            <span id="p1PowerupTimeText">8s</span>
                         </div>
                         <div class="w-full bg-slate-950 border border-yellow-500/30 rounded-sm h-1.5 p-0.5">
-                            <div id="powerupProgressBar" class="bg-yellow-400 h-full" style="width: 100%;"></div>
+                            <div id="p1PowerupBar" class="bg-yellow-400 h-full" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- P2 Status Bar (Co-Op Mode Only) -->
+                <div id="p2HudStatus" class="hidden flex-col gap-1.5 items-end">
+                    <div class="flex items-center gap-2">
+                        <div class="w-32 sm:w-44 bg-slate-950 border border-pink-500/40 rounded-sm h-3 p-0.5">
+                            <div id="p2ShieldBar" class="bg-pink-400 h-full transition-all duration-150" style="width: 100%;"></div>
+                        </div>
+                        <span class="text-xs text-pink-400 font-mono">P2 HULL</span>
+                    </div>
+                    <div id="p2PowerupContainer" class="hidden flex-col gap-1 w-32 sm:w-44">
+                        <div class="flex justify-between text-2xs font-mono text-pink-300">
+                            <span id="p2WeaponDisplay">DUAL LASER</span>
+                            <span id="p2PowerupTimeText">8s</span>
+                        </div>
+                        <div class="w-full bg-slate-950 border border-pink-500/30 rounded-sm h-1.5 p-0.5">
+                            <div id="p2PowerupBar" class="bg-pink-400 h-full" style="width: 100%;"></div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Watermark -->
-                <div class="text-2xs font-mono text-gray-600">
+                <div class="text-2xs font-mono text-gray-600 hidden sm:block">
                     NEO VECTOR SHIFT // <span class="text-blue-500 font-semibold">@gray_exists0</span>
                 </div>
             </div>
@@ -220,26 +254,42 @@
         <!-- Start Menu -->
         <div id="startScreen" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex justify-center items-center z-30 p-4">
             <div class="max-w-md w-full bg-slate-900 border border-slate-700/80 p-6 rounded-lg shadow-2xl relative">
-                <div class="border-b border-slate-800 pb-4 mb-6">
+                <div class="border-b border-slate-800 pb-4 mb-6 text-center">
                     <h1 class="arcade-font text-5xl text-blue-400 leading-none">NEO VECTOR SHIFT</h1>
                     <p class="text-xs text-gray-400 font-mono mt-1">SPACE ACTION ARCADE ENGINE</p>
                 </div>
 
+                <!-- Mode Select Buttons -->
                 <div class="space-y-3 mb-6">
-                    <button id="startBtn" class="w-full py-3 btn-arcade rounded text-lg arcade-font tracking-wide">
-                        START MISSION
-                    </button>
+                    <div class="text-2xs font-mono text-gray-400 text-center tracking-wider">SELECT GAME MODE</div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="startSoloBtn" class="py-3 btn-arcade rounded text-lg arcade-font tracking-wide">
+                            1 PLAYER SOLO
+                        </button>
+                        <button id="startCoopBtn" class="py-3 btn-pink rounded text-lg arcade-font tracking-wide">
+                            2 PLAYER CO-OP
+                        </button>
+                    </div>
                     <button id="optionsBtn" class="w-full py-2 bg-slate-800 border border-slate-700 text-gray-300 text-xs font-mono rounded hover:bg-slate-700 transition">
                         SETTINGS
                     </button>
                 </div>
 
                 <!-- Desktop Controls Legend -->
-                <div class="bg-slate-950 p-4 rounded border border-slate-800 text-xs font-mono text-gray-400 space-y-1">
-                    <div class="text-blue-400 font-bold mb-2">FLIGHT CONTROLS</div>
-                    <div class="flex justify-between"><span>MOVE:</span> <span class="text-gray-200">W A S D / ARROWS</span></div>
-                    <div class="flex justify-between"><span>FIRE:</span> <span class="text-gray-200">SPACEBAR</span></div>
-                    <div class="flex justify-between"><span>PAUSE:</span> <span class="text-gray-200">P KEY</span></div>
+                <div class="bg-slate-950 p-4 rounded border border-slate-800 text-2xs font-mono text-gray-400 space-y-2">
+                    <div class="text-blue-400 font-bold border-b border-slate-800 pb-1">FLIGHT MAPPING</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <span class="text-cyan-400 font-semibold">P1 (CYAN):</span>
+                            <div>MOVE: <span class="text-gray-200">WASD</span></div>
+                            <div>FIRE: <span class="text-gray-200">SPACE / F</span></div>
+                        </div>
+                        <div>
+                            <span class="text-pink-400 font-semibold">P2 (MAGENTA):</span>
+                            <div>MOVE: <span class="text-gray-200">ARROWS</span></div>
+                            <div>FIRE: <span class="text-gray-200">ENTER / L / M</span></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mt-6 text-center text-2xs font-mono text-gray-500">
@@ -313,12 +363,11 @@
     <!-- MAIN GAME LOGIC -->
     <script>
         /**
-         * NEO VECTOR SHIFT
-         * Modern Hand-Crafted Arcade Space Action Game
+         * NEO VECTOR SHIFT (CO-OP EDITION)
          * Developer: @gray_exists0
          */
 
-        // --- SYNTHESIZED SOUND ENGINE ---
+        // ... existing audio code ...
         class SoundEngine {
             constructor() {
                 this.ctx = null;
@@ -332,12 +381,12 @@
                 }
             }
 
-            playLaser() {
+            playLaser(freq = 600) {
                 if (!this.enabled || !this.ctx) return;
                 const osc = this.ctx.createOscillator();
                 const gain = this.ctx.createGain();
                 osc.type = 'triangle';
-                osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
                 osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.1);
                 
                 gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
@@ -397,7 +446,7 @@
 
         const audio = new SoundEngine();
 
-        // --- CANVAS SETUP ---
+        // Canvas Setup
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
@@ -409,10 +458,12 @@
             height = canvas.height = Math.min(window.innerHeight, 850);
         });
 
-        // Game State Variables
+        // Game State
         let isRunning = false;
         let isPaused = false;
-        let score = 0;
+        let isCoopMode = false;
+        let scoreP1 = 0;
+        let scoreP2 = 0;
         let combo = 1;
         let comboTimer = 0;
         let highScore = localStorage.getItem('neovector_highscore') || 0;
@@ -422,15 +473,23 @@
 
         // UI DOM Elements
         const hud = document.getElementById('hud');
-        const scoreDisplay = document.getElementById('scoreDisplay');
+        const p1ScoreDisplay = document.getElementById('p1ScoreDisplay');
+        const p2ScoreDisplay = document.getElementById('p2ScoreDisplay');
+        const p2ScoreBox = document.getElementById('p2ScoreBox');
+        const p2HudStatus = document.getElementById('p2HudStatus');
         const comboDisplay = document.getElementById('comboDisplay');
         const comboMultiplier = document.getElementById('comboMultiplier');
         const highScoreDisplay = document.getElementById('highScoreDisplay');
-        const shieldBar = document.getElementById('shieldBar');
-        const weaponDisplay = document.getElementById('weaponDisplay');
-        const powerupTimerContainer = document.getElementById('powerupTimerContainer');
-        const powerupProgressBar = document.getElementById('powerupProgressBar');
-        const powerupTimeText = document.getElementById('powerupTimeText');
+        const p1ShieldBar = document.getElementById('p1ShieldBar');
+        const p2ShieldBar = document.getElementById('p2ShieldBar');
+        const p1WeaponDisplay = document.getElementById('p1WeaponDisplay');
+        const p2WeaponDisplay = document.getElementById('p2WeaponDisplay');
+        const p1PowerupContainer = document.getElementById('p1PowerupContainer');
+        const p2PowerupContainer = document.getElementById('p2PowerupContainer');
+        const p1PowerupBar = document.getElementById('p1PowerupBar');
+        const p2PowerupBar = document.getElementById('p2PowerupBar');
+        const p1PowerupTimeText = document.getElementById('p1PowerupTimeText');
+        const p2PowerupTimeText = document.getElementById('p2PowerupTimeText');
         const bossHealthContainer = document.getElementById('bossHealthContainer');
         const bossHealthBar = document.getElementById('bossHealthBar');
         const startScreen = document.getElementById('startScreen');
@@ -440,7 +499,7 @@
 
         highScoreDisplay.textContent = String(highScore).padStart(6, '0');
 
-        // --- CONTROLS ---
+        // Controls
         const keys = {};
         const touchState = { dx: 0, dy: 0, firing: false };
 
@@ -450,7 +509,7 @@
         });
         window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
-        // Touch Control Listeners
+        // Touch Control Setup
         const joystickZone = document.getElementById('joystick-zone');
         const joystickKnob = document.getElementById('joystick-knob');
         const fireBtn = document.getElementById('fire-btn-zone');
@@ -503,9 +562,7 @@
         fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); touchState.firing = true; });
         fireBtn.addEventListener('touchend', (e) => { e.preventDefault(); touchState.firing = false; });
 
-        // --- GAME OBJECTS ---
-
-        // Dynamic Starfield Engine
+        // Starfield Engine
         class Starfield {
             constructor() {
                 this.stars = Array.from({ length: 80 }, () => ({
@@ -573,38 +630,55 @@
             }
         }
 
-        // Player Ship Vector Engine
+        // Player Class (Supports P1 & P2)
         class Player {
-            constructor() {
-                this.x = width / 2;
+            constructor(id, x, color, keyMap) {
+                this.id = id;
+                this.x = x;
                 this.y = height - 90;
                 this.radius = 14;
                 this.speed = 5.5;
                 this.shield = 100;
                 this.maxShield = 100;
+                this.color = color;
+                this.keyMap = keyMap;
                 this.weaponLevel = 1;
                 this.weaponTimer = 0;
                 this.maxWeaponTimer = 600;
                 this.fireCooldown = 0;
-                this.tilt = 0; // Micro-detail: Screen tilt
+                this.tilt = 0;
                 this.shieldRipple = 0;
+
+                // Co-Op Down/Revive State
+                this.isDown = false;
+                this.downTimer = 0;
+                this.reviveProgress = 0;
             }
 
             update() {
+                if (this.isDown) {
+                    this.downTimer--;
+                    if (this.downTimer <= 0) {
+                        // Check Game Over condition
+                        checkGameOver();
+                    }
+                    return;
+                }
+
                 let vx = 0;
                 let vy = 0;
 
-                if (keys['ArrowLeft'] || keys['KeyA']) vx -= 1;
-                if (keys['ArrowRight'] || keys['KeyD']) vx += 1;
-                if (keys['ArrowUp'] || keys['KeyW']) vy -= 1;
-                if (keys['ArrowDown'] || keys['KeyS']) vy += 1;
+                // Movement Input
+                if (keys[this.keyMap.left]) vx -= 1;
+                if (keys[this.keyMap.right]) vx += 1;
+                if (keys[this.keyMap.up]) vy -= 1;
+                if (keys[this.keyMap.down]) vy += 1;
 
-                if (touchState.dx !== 0 || touchState.dy !== 0) {
+                if (this.id === 1 && (touchState.dx !== 0 || touchState.dy !== 0)) {
                     vx = touchState.dx;
                     vy = touchState.dy;
                 }
 
-                // Smooth Horizontal Bank/Tilt Micro-detail
                 this.tilt += (vx * 0.25 - this.tilt) * 0.2;
 
                 const mag = Math.hypot(vx, vy);
@@ -616,45 +690,70 @@
                 this.x = Math.max(this.radius, Math.min(width - this.radius, this.x));
                 this.y = Math.max(this.radius, Math.min(height - this.radius, this.y));
 
-                // Weapon Powerup Active Countdown Bar
+                // Weapon Powerup Countdown
+                const bar = this.id === 1 ? p1PowerupBar : p2PowerupBar;
+                const txt = this.id === 1 ? p1PowerupTimeText : p2PowerupTimeText;
+                const container = this.id === 1 ? p1PowerupContainer : p2PowerupContainer;
+
                 if (this.weaponTimer > 0) {
                     this.weaponTimer--;
                     const remainingPct = (this.weaponTimer / this.maxWeaponTimer) * 100;
-                    powerupProgressBar.style.width = `${remainingPct}%`;
-                    powerupTimeText.textContent = `${Math.ceil(this.weaponTimer / 60)}s`;
+                    bar.style.width = `${remainingPct}%`;
+                    txt.textContent = `${Math.ceil(this.weaponTimer / 60)}s`;
 
                     if (this.weaponTimer <= 0) {
                         this.weaponLevel = 1;
-                        powerupTimerContainer.classList.add('hidden');
-                        powerupTimerContainer.classList.remove('flex');
+                        container.classList.add('hidden');
+                        container.classList.remove('flex');
                     }
                 }
 
                 if (this.fireCooldown > 0) this.fireCooldown--;
 
-                if ((keys['Space'] || touchState.firing) && this.fireCooldown <= 0) {
+                const isShooting = this.keyMap.fire.some(k => keys[k]) || (this.id === 1 && touchState.firing);
+                if (isShooting && this.fireCooldown <= 0) {
                     this.shoot();
                 }
 
                 if (this.shieldRipple > 0) this.shieldRipple--;
 
-                // Engine Trail Particles
-                particles.push(new Particle(this.x + (Math.random() - 0.5) * 6, this.y + 12, '#38bdf8', 1.5, 2));
+                // Engine Trail
+                particles.push(new Particle(this.x + (Math.random() - 0.5) * 6, this.y + 12, this.color, 1.5, 2));
+
+                // Revive Logic in Co-Op Mode
+                if (isCoopMode) {
+                    const otherPlayer = this.id === 1 ? player2 : player1;
+                    if (otherPlayer && otherPlayer.isDown) {
+                        const dist = Math.hypot(this.x - otherPlayer.x, this.y - otherPlayer.y);
+                        if (dist < 40) {
+                            otherPlayer.reviveProgress += 1;
+                            if (otherPlayer.reviveProgress >= 120) { // 2 Seconds near player
+                                otherPlayer.isDown = false;
+                                otherPlayer.shield = 40;
+                                otherPlayer.reviveProgress = 0;
+                                updateShieldUI(otherPlayer);
+                                audio.playPowerup();
+                            }
+                        } else {
+                            otherPlayer.reviveProgress = Math.max(0, otherPlayer.reviveProgress - 1);
+                        }
+                    }
+                }
             }
 
             shoot() {
-                audio.playLaser();
+                audio.playLaser(this.id === 1 ? 600 : 750);
                 if (this.weaponLevel === 1) {
-                    projectiles.push(new Projectile(this.x, this.y - 12, 0, -11, '#38bdf8'));
+                    projectiles.push(new Projectile(this.x, this.y - 12, 0, -11, this.color, false, this.id));
                     this.fireCooldown = 11;
                 } else if (this.weaponLevel === 2) {
-                    projectiles.push(new Projectile(this.x - 8, this.y - 10, 0, -11, '#38bdf8'));
-                    projectiles.push(new Projectile(this.x + 8, this.y - 10, 0, -11, '#38bdf8'));
+                    projectiles.push(new Projectile(this.x - 8, this.y - 10, 0, -11, this.color, false, this.id));
+                    projectiles.push(new Projectile(this.x + 8, this.y - 10, 0, -11, this.color, false, this.id));
                     this.fireCooldown = 9;
                 } else if (this.weaponLevel === 3) {
-                    projectiles.push(new Projectile(this.x, this.y - 12, 0, -11, '#facc15'));
-                    projectiles.push(new Projectile(this.x - 6, this.y - 10, -2, -10, '#facc15'));
-                    projectiles.push(new Projectile(this.x + 6, this.y - 10, 2, -10, '#facc15'));
+                    projectiles.push(new Projectile(this.x, this.y - 12, 0, -11, '#facc15', false, this.id));
+                    projectiles.push(new Projectile(this.x - 6, this.y - 10, -2, -10, '#facc15', false, this.id));
+                    projectiles.push(new Projectile(this.x + 6, this.y - 10, 2, -10, '#facc15', false, this.id));
                     this.fireCooldown = 10;
                 }
             }
@@ -662,19 +761,42 @@
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
+
+                if (this.isDown) {
+                    // Downed state pulsing marker
+                    ctx.strokeStyle = '#ef4444';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 18, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Revive progress ring
+                    if (this.reviveProgress > 0) {
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.beginPath();
+                        ctx.arc(0, 0, 22, -Math.PI / 2, (-Math.PI / 2) + (Math.PI * 2 * (this.reviveProgress / 120)));
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = '#ef4444';
+                    ctx.font = '10px Share Tech Mono';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('REBOOT', 0, 4);
+                    ctx.restore();
+                    return;
+                }
+
                 ctx.rotate(this.tilt);
 
-                // Shield Hit Micro-detail Ripple Ring
                 if (this.shieldRipple > 0) {
-                    ctx.strokeStyle = `rgba(56, 189, 248, ${this.shieldRipple / 10})`;
+                    ctx.strokeStyle = this.color;
                     ctx.lineWidth = 2;
                     ctx.beginPath();
                     ctx.arc(0, 0, this.radius + 8, 0, Math.PI * 2);
                     ctx.stroke();
                 }
 
-                // Clean Vector Ship Outline
-                ctx.strokeStyle = '#38bdf8';
+                ctx.strokeStyle = this.color;
                 ctx.fillStyle = '#090d16';
                 ctx.lineWidth = 2;
 
@@ -691,20 +813,37 @@
             }
 
             hit(damage) {
+                if (this.isDown) return;
                 this.shield -= damage;
                 this.shieldRipple = 10;
                 shakeTime = 8;
-                shieldBar.style.width = `${Math.max(0, (this.shield / this.maxShield) * 100)}%`;
+                updateShieldUI(this);
 
                 if (this.shield <= 0) {
-                    triggerGameOver();
+                    this.shield = 0;
+                    createExplosion(this.x, this.y, this.color, 20);
+                    audio.playExplosion(true);
+
+                    if (isCoopMode) {
+                        this.isDown = true;
+                        this.downTimer = 600; // 10s down timer
+                        this.reviveProgress = 0;
+                        checkGameOver();
+                    } else {
+                        triggerGameOver();
+                    }
                 }
             }
         }
 
+        function updateShieldUI(p) {
+            const bar = p.id === 1 ? p1ShieldBar : p2ShieldBar;
+            bar.style.width = `${Math.max(0, (p.shield / p.maxShield) * 100)}%`;
+        }
+
         // Projectiles
         class Projectile {
-            constructor(x, y, vx, vy, color, isEnemy = false) {
+            constructor(x, y, vx, vy, color, isEnemy = false, ownerId = 1) {
                 this.x = x;
                 this.y = y;
                 this.vx = vx;
@@ -712,6 +851,7 @@
                 this.color = color;
                 this.radius = 3;
                 this.isEnemy = isEnemy;
+                this.ownerId = ownerId;
                 this.markedForDeletion = false;
             }
 
@@ -732,14 +872,14 @@
             }
         }
 
-        // Enemy Classes
+        // Enemies & Boss
         class Enemy {
             constructor(type) {
                 this.type = type;
                 this.x = Math.random() * (width - 60) + 30;
                 this.y = -20;
                 this.markedForDeletion = false;
-                this.flashTime = 0; // Micro-detail: Damage flash
+                this.flashTime = 0;
 
                 if (type === 'scout') {
                     this.hp = 1;
@@ -774,8 +914,6 @@
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
-
-                // Flash white when hit
                 ctx.strokeStyle = this.flashTime > 0 ? '#ffffff' : this.color;
                 ctx.lineWidth = 1.8;
                 ctx.beginPath();
@@ -797,14 +935,14 @@
                 ctx.restore();
             }
 
-            hit(damage) {
+            hit(damage, ownerId) {
                 this.hp -= damage;
                 this.flashTime = 4;
                 if (this.hp <= 0) {
                     this.markedForDeletion = true;
                     createExplosion(this.x, this.y, this.color, 12);
                     audio.playExplosion();
-                    addScore(this.scoreValue);
+                    addScore(this.scoreValue, ownerId);
 
                     if (Math.random() < 0.18) {
                         powerups.push(new Powerup(this.x, this.y));
@@ -813,13 +951,12 @@
             }
         }
 
-        // Boss Encounter Class
         class Boss {
             constructor() {
                 this.x = width / 2;
                 this.y = -80;
                 this.targetY = 100;
-                this.maxHp = 120;
+                this.maxHp = isCoopMode ? 220 : 120;
                 this.hp = this.maxHp;
                 this.radius = 42;
                 this.color = '#ef4444';
@@ -861,7 +998,6 @@
             draw() {
                 ctx.save();
                 ctx.translate(this.x, this.y);
-
                 ctx.strokeStyle = this.flashTime > 0 ? '#ffffff' : this.color;
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
@@ -870,11 +1006,10 @@
 
                 ctx.fillStyle = '#ef4444';
                 ctx.fillRect(-10, -10, 20, 20);
-
                 ctx.restore();
             }
 
-            hit(damage) {
+            hit(damage, ownerId) {
                 this.hp -= damage;
                 this.flashTime = 3;
                 updateBossHealth();
@@ -883,7 +1018,7 @@
                     this.markedForDeletion = true;
                     createExplosion(this.x, this.y, '#ef4444', 40);
                     audio.playExplosion(true);
-                    addScore(3000);
+                    addScore(3000, ownerId);
                     bossHealthContainer.classList.add('hidden');
                     bossHealthContainer.classList.remove('flex');
                     boss = null;
@@ -891,7 +1026,6 @@
             }
         }
 
-        // Powerups
         class Powerup {
             constructor(x, y) {
                 this.x = x;
@@ -921,14 +1055,14 @@
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(this.type[0], 0, 0);
-
                 ctx.restore();
             }
         }
 
-        // --- GAME SYSTEM INSTANCES ---
+        // Global Instances
         let starfield = new Starfield();
-        let player = new Player();
+        let player1 = null;
+        let player2 = null;
         let enemies = [];
         let projectiles = [];
         let powerups = [];
@@ -941,22 +1075,27 @@
             }
         }
 
-        function addScore(pts) {
-            // Combo Multiplier calculation
-            comboTimer = 180; // 3-second decay window
-            combo = Math.min(combo + 0.1, 5); // Cap at 5x
+        function addScore(pts, ownerId = 1) {
+            comboTimer = 180;
+            combo = Math.min(combo + 0.1, 5);
             const totalAdd = Math.floor(pts * Math.floor(combo));
-            
-            score += totalAdd;
-            scoreDisplay.textContent = String(score).padStart(6, '0');
+
+            if (ownerId === 1) {
+                scoreP1 += totalAdd;
+                p1ScoreDisplay.textContent = String(scoreP1).padStart(6, '0');
+            } else {
+                scoreP2 += totalAdd;
+                p2ScoreDisplay.textContent = String(scoreP2).padStart(6, '0');
+            }
 
             if (Math.floor(combo) > 1) {
                 comboMultiplier.textContent = Math.floor(combo);
                 comboDisplay.style.opacity = '1';
             }
 
-            if (score > highScore) {
-                highScore = score;
+            const totalScore = scoreP1 + scoreP2;
+            if (totalScore > highScore) {
+                highScore = totalScore;
                 highScoreDisplay.textContent = String(highScore).padStart(6, '0');
                 localStorage.setItem('neovector_highscore', highScore);
             }
@@ -968,14 +1107,23 @@
             bossHealthBar.style.width = `${pct}%`;
         }
 
-        // --- MAIN ANIMATION LOOP ---
+        function checkGameOver() {
+            if (isCoopMode) {
+                if (player1.isDown && player2.isDown) {
+                    triggerGameOver();
+                }
+            } else if (player1.shield <= 0) {
+                triggerGameOver();
+            }
+        }
+
+        // Animation Loop
         function animate() {
             if (!isRunning) return;
 
             if (!isPaused) {
                 frameCount++;
 
-                // Decay combo over time if no hits
                 if (comboTimer > 0) {
                     comboTimer--;
                     if (comboTimer <= 0) {
@@ -993,23 +1141,28 @@
                     shakeTime--;
                 }
 
-                // Starfield acceleration warp micro-detail
                 const isAccelerating = keys['KeyW'] || keys['ArrowUp'] || touchState.dy < -0.2;
                 starfield.update(warpEffectEnabled && isAccelerating);
                 starfield.draw();
 
-                // Enemy Spawns
                 if (!boss) {
                     if (frameCount % 55 === 0) enemies.push(new Enemy('scout'));
                     if (frameCount % 180 === 0) enemies.push(new Enemy('interceptor'));
 
-                    if (score > 2500 && !boss) {
+                    const totalScore = scoreP1 + scoreP2;
+                    if (totalScore > 2500 && !boss) {
                         boss = new Boss();
                     }
                 }
 
-                player.update();
-                player.draw();
+                // Update & Draw Players
+                const activePlayers = [player1];
+                if (isCoopMode && player2) activePlayers.push(player2);
+
+                activePlayers.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
 
                 if (boss) {
                     boss.update();
@@ -1017,28 +1170,32 @@
 
                     projectiles.forEach(p => {
                         if (!p.isEnemy && Math.hypot(p.x - boss.x, p.y - boss.y) < boss.radius + p.radius) {
-                            boss.hit(1);
+                            boss.hit(1, p.ownerId);
                             p.markedForDeletion = true;
                         }
                     });
 
-                    if (Math.hypot(player.x - boss.x, player.y - boss.y) < player.radius + boss.radius) {
-                        player.hit(2);
-                    }
+                    activePlayers.forEach(p => {
+                        if (!p.isDown && Math.hypot(p.x - boss.x, p.y - boss.y) < p.radius + boss.radius) {
+                            p.hit(2);
+                        }
+                    });
                 }
 
                 enemies.forEach(enemy => {
                     enemy.update();
                     enemy.draw();
 
-                    if (Math.hypot(player.x - enemy.x, player.y - enemy.y) < player.radius + enemy.radius) {
-                        enemy.hit(10);
-                        player.hit(15);
-                    }
+                    activePlayers.forEach(p => {
+                        if (!p.isDown && Math.hypot(p.x - enemy.x, p.y - enemy.y) < p.radius + enemy.radius) {
+                            enemy.hit(10, p.id);
+                            p.hit(15);
+                        }
+                    });
 
                     projectiles.forEach(p => {
                         if (!p.isEnemy && Math.hypot(p.x - enemy.x, p.y - enemy.y) < enemy.radius + p.radius) {
-                            enemy.hit(1);
+                            enemy.hit(1, p.ownerId);
                             p.markedForDeletion = true;
                         }
                     });
@@ -1048,10 +1205,14 @@
                     p.update();
                     p.draw();
 
-                    if (p.isEnemy && Math.hypot(player.x - p.x, player.y - p.y) < player.radius + p.radius) {
-                        player.hit(10);
-                        p.markedForDeletion = true;
-                        createExplosion(p.x, p.y, '#ef4444', 6);
+                    if (p.isEnemy) {
+                        activePlayers.forEach(plr => {
+                            if (!plr.isDown && Math.hypot(plr.x - p.x, plr.y - p.y) < plr.radius + p.radius) {
+                                plr.hit(10);
+                                p.markedForDeletion = true;
+                                createExplosion(p.x, p.y, '#ef4444', 6);
+                            }
+                        });
                     }
                 });
 
@@ -1059,20 +1220,25 @@
                     pow.update();
                     pow.draw();
 
-                    if (Math.hypot(player.x - pow.x, player.y - pow.y) < player.radius + pow.radius) {
-                        audio.playPowerup();
-                        if (pow.type === 'SHIELD') {
-                            player.shield = Math.min(player.maxShield, player.shield + 30);
-                            shieldBar.style.width = `${(player.shield / player.maxShield) * 100}%`;
-                        } else {
-                            player.weaponLevel = pow.type === 'DUAL' ? 2 : 3;
-                            player.weaponTimer = player.maxWeaponTimer;
-                            weaponDisplay.textContent = pow.type === 'DUAL' ? 'DUAL LASER' : 'SPREAD SHOT';
-                            powerupTimerContainer.classList.remove('hidden');
-                            powerupTimerContainer.classList.add('flex');
+                    activePlayers.forEach(plr => {
+                        if (!plr.isDown && Math.hypot(plr.x - pow.x, plr.y - pow.y) < plr.radius + pow.radius) {
+                            audio.playPowerup();
+                            const container = plr.id === 1 ? p1PowerupContainer : p2PowerupContainer;
+                            const weaponTxt = plr.id === 1 ? p1WeaponDisplay : p2WeaponDisplay;
+
+                            if (pow.type === 'SHIELD') {
+                                plr.shield = Math.min(plr.maxShield, plr.shield + 30);
+                                updateShieldUI(plr);
+                            } else {
+                                plr.weaponLevel = pow.type === 'DUAL' ? 2 : 3;
+                                plr.weaponTimer = plr.maxWeaponTimer;
+                                weaponTxt.textContent = pow.type === 'DUAL' ? 'DUAL LASER' : 'SPREAD SHOT';
+                                container.classList.remove('hidden');
+                                container.classList.add('flex');
+                            }
+                            pow.markedForDeletion = true;
                         }
-                        pow.markedForDeletion = true;
-                    }
+                    });
                 });
 
                 particles.forEach(p => {
@@ -1080,7 +1246,6 @@
                     p.draw();
                 });
 
-                // Cleanup
                 enemies = enemies.filter(e => !e.markedForDeletion);
                 projectiles = projectiles.filter(p => !p.markedForDeletion);
                 powerups = powerups.filter(p => !p.markedForDeletion);
@@ -1092,14 +1257,35 @@
             requestAnimationFrame(animate);
         }
 
-        // --- CONTROLLER ACTIONS ---
-        function startGame() {
+        // System Actions
+        function startGame(coop = false) {
             audio.init();
-            score = 0;
+            isCoopMode = coop;
+            scoreP1 = 0;
+            scoreP2 = 0;
             combo = 1;
-            scoreDisplay.textContent = '000000';
+            p1ScoreDisplay.textContent = '000000';
+            p2ScoreDisplay.textContent = '000000';
             comboDisplay.style.opacity = '0';
-            player = new Player();
+
+            player1 = new Player(1, isCoopMode ? width / 3 : width / 2, '#38bdf8', {
+                left: 'KeyA', right: 'KeyD', up: 'KeyW', down: 'KeyS', fire: ['Space', 'KeyF']
+            });
+
+            if (isCoopMode) {
+                player2 = new Player(2, (width / 3) * 2, '#f472b6', {
+                    left: 'ArrowLeft', right: 'ArrowRight', up: 'ArrowUp', down: 'ArrowDown', fire: ['Enter', 'KeyL', 'KeyM']
+                });
+                p2ScoreBox.classList.remove('hidden');
+                p2HudStatus.classList.remove('hidden');
+                p2HudStatus.classList.add('flex');
+            } else {
+                player2 = null;
+                p2ScoreBox.classList.add('hidden');
+                p2HudStatus.classList.add('hidden');
+                p2HudStatus.classList.remove('flex');
+            }
+
             enemies = [];
             projectiles = [];
             powerups = [];
@@ -1107,11 +1293,12 @@
             boss = null;
             frameCount = 0;
 
-            shieldBar.style.width = '100%';
+            p1ShieldBar.style.width = '100%';
+            p2ShieldBar.style.width = '100%';
             bossHealthContainer.classList.add('hidden');
             bossHealthContainer.classList.remove('flex');
-            powerupTimerContainer.classList.add('hidden');
-            powerupTimerContainer.classList.remove('flex');
+            p1PowerupContainer.classList.add('hidden');
+            p2PowerupContainer.classList.add('hidden');
 
             startScreen.classList.add('hidden');
             gameOverScreen.classList.add('hidden');
@@ -1125,7 +1312,8 @@
         function triggerGameOver() {
             isRunning = false;
             audio.playExplosion(true);
-            document.getElementById('finalScore').textContent = String(score).padStart(6, '0');
+            const totalScore = scoreP1 + scoreP2;
+            document.getElementById('finalScore').textContent = String(totalScore).padStart(6, '0');
             document.getElementById('bestScore').textContent = String(highScore).padStart(6, '0');
             hud.classList.add('hidden');
             gameOverScreen.classList.remove('hidden');
@@ -1138,9 +1326,10 @@
             else pauseOverlay.classList.add('hidden');
         }
 
-        // Event Listeners
-        document.getElementById('startBtn').addEventListener('click', startGame);
-        document.getElementById('restartBtn').addEventListener('click', startGame);
+        // UI Event Handlers
+        document.getElementById('startSoloBtn').addEventListener('click', () => startGame(false));
+        document.getElementById('startCoopBtn').addEventListener('click', () => startGame(true));
+        document.getElementById('restartBtn').addEventListener('click', () => startGame(isCoopMode));
         document.getElementById('pauseBtn').addEventListener('click', togglePause);
         document.getElementById('resumeBtn').addEventListener('click', togglePause);
 
